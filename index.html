@@ -65,7 +65,9 @@
   <script>
     const SUPABASE_URL = 'https://wbbztdstalznijwutydz.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_KoiM7IPTmTf7-kDucRq-GA_VFE-no9T';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Çakışmayı önlemek için veritabanı bağlantısını 'db' olarak başlattık
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = 'Ben';
 
@@ -76,7 +78,7 @@
     }
 
     async function loadProfiles() {
-      const { data } = await supabase.from('profiles').select('*');
+      const { data } = await db.from('profiles').select('*');
       if (data) {
         const me = data.find(p => p.name === currentUser);
         const partner = data.find(p => p.name !== currentUser);
@@ -90,7 +92,7 @@
       if (!input || !input.value.trim()) return;
 
       const text = input.value.trim();
-      const { error } = await supabase
+      const { error } = await db
         .from('requests')
         .insert([{ title: text, created_by: currentUser, status: 'pending' }]);
 
@@ -104,7 +106,7 @@
     }
 
     async function fetchRequests() {
-      const { data } = await supabase.from('requests').select('*').eq('status', 'pending');
+      const { data } = await db.from('requests').select('*').eq('status', 'pending');
       const container = document.getElementById('requestsList');
       if (!data || data.length === 0) {
         container.innerHTML = '<p class="text-xs text-slate-400">Aktif istek bulunmuyor.</p>';
@@ -122,12 +124,12 @@
     }
 
     async function completeRequest(id) {
-      await supabase.from('requests').update({ status: 'completed' }).eq('id', id);
+      await db.from('requests').update({ status: 'completed' }).eq('id', id);
       fetchRequests();
     }
 
     async function loadTasks() {
-      const { data } = await supabase.from('tasks').select('*');
+      const { data } = await db.from('tasks').select('*');
       const container = document.getElementById('tasksList');
       if (!data || data.length === 0) {
         container.innerHTML = '<p class="text-xs text-slate-400">Görev bulunamadı.</p>';
@@ -145,10 +147,10 @@
     }
 
     async function completeTask(taskId, points) {
-      const { data: profile } = await supabase.from('profiles').select('*').eq('name', currentUser).single();
+      const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
       if (profile) {
         const newPoints = (profile.points || 0) + points;
-        await supabase.from('profiles').update({ points: newPoints }).eq('name', currentUser);
+        await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
         loadProfiles();
       }
     }
