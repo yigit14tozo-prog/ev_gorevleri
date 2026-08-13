@@ -6,7 +6,6 @@
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <!-- UYGULAMANIN ANA EKRAN İSMİNİ KISALTAN KOD BURADA -->
   <meta name="apple-mobile-web-app-title" content="EV SEVGİSİ">
   <meta name="theme-color" content="#4f46e5">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/7594/7594072.png">
@@ -135,9 +134,29 @@
       </div>
     </div>
 
+    <!-- SEKME 4: YENİ EKLENEN AYLIK ANALİZ / RAPOR -->
+    <div id="tab-stats" class="space-y-6 tab-hidden">
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-2xl card-shadow border border-blue-100 min-h-[50vh]">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-sm font-extrabold text-indigo-800 uppercase tracking-wider">📊 Aylık Analiz</h2>
+          <!-- Otomatik Ay Seçici -->
+          <select id="monthSelect" onchange="loadStatsData()" class="bg-white text-indigo-700 font-bold text-xs py-1.5 px-3 rounded-lg border border-indigo-200 focus:outline-none shadow-sm">
+            <option value="">Yükleniyor...</option>
+          </select>
+        </div>
+        
+        <p class="text-[11px] text-slate-500 mb-4 italic">Kimin hangi görevi kaç defa yaptığını haftalık olarak aşağıda görebilirsiniz. (Cezalar ve Ödüller hesaplamaya dahil edilmez).</p>
+        
+        <!-- Otomatik Oluşturulacak İstatistikler -->
+        <div id="statsContent" class="space-y-4">
+          <p class="text-xs text-slate-400">Veriler toplanıyor...</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- ALT MENÜ -->
+  <!-- ALT MENÜ (4 BUTONLU YENİ HALİ) -->
   <div class="fixed bottom-0 left-0 right-0 glass-bottom pb-safe z-50">
     <div class="max-w-md mx-auto flex justify-around items-center py-2">
       
@@ -156,6 +175,11 @@
         <span class="text-[10px] font-bold uppercase tracking-wider">Geçmiş</span>
       </button>
 
+      <button onclick="switchTab('stats', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
+        <span class="text-2xl mb-1">📊</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Analiz</span>
+      </button>
+
     </div>
   </div>
 
@@ -170,6 +194,7 @@
       document.getElementById('tab-home').classList.add('tab-hidden');
       document.getElementById('tab-market').classList.add('tab-hidden');
       document.getElementById('tab-history').classList.add('tab-hidden');
+      document.getElementById('tab-stats').classList.add('tab-hidden'); // Yeni sekme
       
       document.getElementById('tab-' + tabName).classList.remove('tab-hidden');
 
@@ -181,7 +206,6 @@
 
     function changeUser(user) {
       currentUser = user;
-      
       const btnYigit = document.getElementById('btn-Yiğit');
       const btnBuse = document.getElementById('btn-Buse');
       
@@ -192,7 +216,6 @@
         btnBuse.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm";
         btnYigit.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold text-white hover:bg-white/10";
       }
-
       loadProfiles();
       fetchRequests();
     }
@@ -211,7 +234,6 @@
       if (data) {
         const me = data.find(p => p.name === currentUser);
         const partner = data.find(p => p.name !== currentUser);
-        
         const myPts = me ? me.points || 0 : 0;
         const partnerPts = partner ? partner.points || 0 : 0;
         
@@ -231,6 +253,110 @@
       await db.from('profiles').update({ points: 0 }).eq('name', currentUser);
       loadProfiles();
     }
+
+    // --- YENİ EKLENEN OTOMATİK ANALİZ / RAPOR SİSTEMİ ---
+    
+    // Veritabanındaki geçmişi tarayıp benzersiz ayları (Örn: Ağustos 2026) bulur
+    async function loadStatsMonthOptions() {
+      const { data } = await db.from('task_history').select('completed_at').order('completed_at', { ascending: false });
+      const select = document.getElementById('monthSelect');
+      const monthsSet = new Set();
+      
+      if (data && data.length > 0) {
+        data.forEach(d => {
+          const date = new Date(d.completed_at);
+          const monthYear = date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+          monthsSet.add(monthYear);
+        });
+      }
+      
+      // Eğer hiç geçmiş yoksa, sadece şu anki ayı göstersin
+      if (monthsSet.size === 0) {
+        monthsSet.add(new Date().toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }));
+      }
+
+      select.innerHTML = Array.from(monthsSet).map(m => `<option value="${m}">${m}</option>`).join('');
+      loadStatsData(); // Menü dolunca otomatik verileri çek
+    }
+
+    // Seçilen aya göre verileri haftalık gruplar ve ekrana basar
+    async function loadStatsData() {
+      const selectedMonth = document.getElementById('monthSelect').value;
+      if(!selectedMonth) return;
+      
+      const { data } = await db.from('task_history').select('*').order('completed_at', { ascending: true });
+      const container = document.getElementById('statsContent');
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Bu ay henüz görev yapılmamış.</p>';
+        return;
+      }
+
+      // 1. Sadece seçili aya ait olanları filtrele
+      const filtered = data.filter(d => {
+        const dMonth = new Date(d.completed_at).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+        return dMonth === selectedMonth;
+      });
+
+      // Haftalık klasörleri oluştur
+      const weeks = { "1. Hafta": {}, "2. Hafta": {}, "3. Hafta": {}, "4. Hafta ve Sonrası": {} };
+      
+      filtered.forEach(item => {
+        // Cezaları ve Ödül kullanımlarını rapor dışı bırak (Sadece görevleri saysın)
+        if(item.task_title.includes('🚨 CEZA') || item.task_title.includes('🎁 ÖDÜL')) return;
+
+        const date = new Date(item.completed_at);
+        const day = date.getDate();
+        let week = "4. Hafta ve Sonrası";
+        if(day <= 7) week = "1. Hafta";
+        else if(day <= 14) week = "2. Hafta";
+        else if(day <= 21) week = "3. Hafta";
+
+        if(!weeks[week][item.completed_by]) weeks[week][item.completed_by] = {};
+        
+        // "Özel İstek: Kahve yap (İstekten 2 saat sonra yapıldı)" yazısındaki gereksiz metinleri temizle
+        let cleanTitle = item.task_title.split(' (İstekten')[0]; 
+        cleanTitle = cleanTitle.split(' (Anında')[0];
+        cleanTitle = cleanTitle.replace('Özel İstek: ', '');
+
+        if(!weeks[week][item.completed_by][cleanTitle]) {
+           weeks[week][item.completed_by][cleanTitle] = 0;
+        }
+        weeks[week][item.completed_by][cleanTitle]++; // Sayıyı artır
+      });
+
+      // 3. Verileri HTML'e çevirip ekrana bas
+      let html = '';
+      Object.keys(weeks).forEach(weekName => {
+        const weekData = weeks[weekName];
+        if(Object.keys(weekData).length === 0) return; // Boş haftayı atla
+
+        html += `<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                   <h3 class="font-black text-indigo-700 text-sm mb-3 border-b border-indigo-50 pb-2">${weekName}</h3>`;
+        
+        ['Yiğit', 'Buse'].forEach(person => {
+           if(weekData[person]) {
+              html += `<div class="mb-3 last:mb-0">
+                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-md">${person}</span>
+                         <ul class="mt-2 space-y-2">`;
+              
+              Object.keys(weekData[person]).forEach(task => {
+                 const count = weekData[person][task];
+                 html += `<li class="text-sm font-semibold text-slate-700 flex justify-between items-center bg-slate-50 p-2 rounded-lg">
+                            <span>${task}</span>
+                            <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md shadow-sm">${count} Kez</span>
+                          </li>`;
+              });
+              html += `</ul></div>`;
+           }
+        });
+        html += `</div>`;
+      });
+
+      if(html === '') html = '<p class="text-sm font-semibold text-slate-400 text-center py-4">Bu ay henüz hiç görev kaydı yok. 🧹</p>';
+      container.innerHTML = html;
+    }
+    // --- ANALİZ SİSTEMİ BİTİŞ ---
 
     async function loadPenalties() {
       const { data } = await db.from('penalties').select('*').order('points', { ascending: true });
@@ -371,7 +497,9 @@
       }
       await db.from('task_history').insert([{ task_title: taskTitle, points: points, completed_by: currentUser }]);
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      loadProfiles(); loadHistory();
+      loadProfiles(); 
+      loadHistory();
+      loadStatsData(); // Analizi de anında güncelle
     }
 
     async function deleteHistory(id, points, completedBy) {
@@ -382,7 +510,9 @@
         await db.from('profiles').update({ points: newPoints }).eq('name', completedBy);
       }
       await db.from('task_history').delete().eq('id', id);
-      loadProfiles(); loadHistory();
+      loadProfiles(); 
+      loadHistory();
+      loadStatsData(); // Analizi anında güncelle
     }
 
     async function loadHistory() {
@@ -472,11 +602,14 @@
       }
       await db.from('task_history').insert([{ task_title: `Özel İstek: ${title}${delayText}`, points: points, completed_by: currentUser }]);
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      loadProfiles(); loadHistory(); fetchRequests();
+      loadProfiles(); loadHistory(); fetchRequests(); loadStatsData();
     }
 
+    // --- BAŞLATMA ---
     changeUser('Yiğit');
-    loadPenalties(); loadRewards(); loadTasks(); loadHistory();
+    loadPenalties(); loadRewards(); loadTasks(); loadHistory(); 
+    loadStatsMonthOptions(); // Rapor menüsünü başlat
+    
     document.querySelector('.nav-btn').classList.add('active', 'text-indigo-600');
   </script>
 </body>
