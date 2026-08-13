@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,116 +14,160 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  <!-- Sadece bu projeye özel ekstra tasarım ayarları -->
   <style>
-    body { background-color: #f8fafc; }
+    body { background-color: #f8fafc; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
     .glass-header { background: rgba(79, 70, 229, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    .glass-bottom { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05); }
     .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+    
+    /* Sekme gizleme sınıfı */
+    .tab-hidden { display: none; }
+    
+    /* Menü ikonu aktif durumu */
+    .nav-btn.active { color: #4f46e5; font-weight: 800; transform: scale(1.05); }
+    .nav-btn { transition: all 0.2s ease-in-out; color: #94a3b8; }
   </style>
 </head>
-<body class="text-slate-800 font-sans pb-12 antialiased">
+<body class="text-slate-800 font-sans pb-24 antialiased">
 
-  <!-- Üst Başlık (YENİ GLASS EFEKTİ) -->
+  <!-- Üst Başlık (Sabit) -->
   <div class="glass-header text-white p-4 sticky top-0 z-50 shadow-lg">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-extrabold tracking-tight drop-shadow-sm">🏠 Ev Görevleri</h1>
-      <select id="userSelect" onchange="changeUser(this.value)" class="bg-white/20 backdrop-blur-md text-white font-semibold text-sm py-1.5 px-3 rounded-xl border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all cursor-pointer">
+      <select id="userSelect" onchange="changeUser(this.value)" class="bg-white/20 backdrop-blur-md text-white font-semibold text-sm py-1.5 px-3 rounded-xl border border-white/30 focus:outline-none">
         <option value="Yiğit" class="text-slate-800">Profil: Yiğit</option>
         <option value="Buse" class="text-slate-800">Profil: Buse</option>
       </select>
     </div>
   </div>
 
-  <div class="max-w-md mx-auto p-4 space-y-6 mt-2">
+  <div class="max-w-md mx-auto p-4 mt-2">
 
-    <!-- PUAN DURUMU -->
-    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-sm font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">🏆 Puan Durumu</h2>
-        <button onclick="resetMyPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 border border-red-100" title="Sadece Kendi Puanımı Sıfırla">🔄 Sıfırla</button>
-      </div>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Benim Puanım</span>
-          <div id="myPoints" class="text-4xl font-black text-indigo-600 mt-1 drop-shadow-sm">0</div>
-        </div>
-        <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner Puanı</span>
-          <div id="partnerPoints" class="text-4xl font-black text-pink-500 mt-1 drop-shadow-sm">0</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- YENİ: CEZA SİSTEMİ -->
-    <div class="bg-gradient-to-r from-red-50 to-rose-50 p-5 rounded-2xl card-shadow border border-red-100">
-      <h2 class="text-sm font-extrabold text-red-800 mb-3 uppercase tracking-wider flex items-center gap-1">🚨 Ceza Kes</h2>
+    <!-- SEKME 1: ANA SAYFA (GÖREVLER VE PUAN) -->
+    <div id="tab-home" class="space-y-6">
       
-      <div class="flex gap-2 mb-4">
-        <input type="text" id="newPenaltyTitle" placeholder="Ceza (Örn: Çöpü unuttu)" class="flex-1 border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white/80">
-        <input type="number" id="newPenaltyPoints" placeholder="Puan" class="w-20 border border-red-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white/80">
-        <button onclick="addPenalty()" class="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm">Ekle</button>
+      <!-- PUAN DURUMU -->
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-sm font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">🏆 Puan Durumu</h2>
+          <button onclick="resetMyPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95" title="Sadece Kendi Puanımı Sıfırla">🔄 Sıfırla</button>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Benim Puanım</span>
+            <div id="myPoints" class="text-4xl font-black text-indigo-600 mt-1 drop-shadow-sm">0</div>
+          </div>
+          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner Puanı</span>
+            <div id="partnerPoints" class="text-4xl font-black text-pink-500 mt-1 drop-shadow-sm">0</div>
+          </div>
+        </div>
       </div>
 
-      <div id="penaltiesList" class="space-y-2">
-        <p class="text-xs text-slate-400">Yükleniyor...</p>
+      <!-- KALICI GÖREVLER -->
+      <div class="bg-gradient-to-r from-slate-50 to-indigo-50 p-5 rounded-2xl card-shadow border border-indigo-100">
+        <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">✅ Yapılacak Görevler</h2>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="newTaskTitle" placeholder="Yeni Görev (Örn: Çöpü At)" class="flex-1 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white/80">
+          <input type="number" id="newTaskPoints" placeholder="Puan" class="w-20 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white/80">
+          <button onclick="addTask()" class="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95 shadow-sm">Ekle</button>
+        </div>
+        <div id="tasksList" class="space-y-3">
+          <p class="text-xs text-slate-400">Görevler yükleniyor...</p>
+        </div>
       </div>
-      <p class="text-[10px] text-red-400 mt-3 italic">* Ceza Kes butonuna bastığında puan şu an seçili olan profilden (Yukarıdaki isimden) düşer.</p>
     </div>
 
-    <!-- ÖDÜL MARKETİ -->
-    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-2xl card-shadow border border-yellow-200">
-      <h2 class="text-sm font-extrabold text-yellow-800 mb-3 uppercase tracking-wider flex items-center gap-1">🎁 Ödül Marketi</h2>
+
+    <!-- SEKME 2: MARKET (ÖDÜL VE CEZA) -->
+    <div id="tab-market" class="space-y-6 tab-hidden">
+      <!-- CEZA SİSTEMİ -->
+      <div class="bg-gradient-to-r from-red-50 to-rose-50 p-5 rounded-2xl card-shadow border border-red-100">
+        <h2 class="text-sm font-extrabold text-red-800 mb-3 uppercase tracking-wider flex items-center gap-1">🚨 Ceza Kes</h2>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="newPenaltyTitle" placeholder="Ceza (Örn: Çöpü unuttu)" class="flex-1 border border-red-200 rounded-xl px-3 py-2 text-sm bg-white/80">
+          <input type="number" id="newPenaltyPoints" placeholder="Puan" class="w-20 border border-red-200 rounded-xl px-3 py-2 text-sm bg-white/80">
+          <button onclick="addPenalty()" class="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95 shadow-sm">Ekle</button>
+        </div>
+        <div id="penaltiesList" class="space-y-2">
+          <p class="text-xs text-slate-400">Yükleniyor...</p>
+        </div>
+      </div>
+
+      <!-- ÖDÜL MARKETİ -->
+      <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-2xl card-shadow border border-yellow-200">
+        <h2 class="text-sm font-extrabold text-yellow-800 mb-3 uppercase tracking-wider flex items-center gap-1">🎁 Ödül Marketi</h2>
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="newRewardTitle" placeholder="Ödül (Örn: Dondurma)" class="flex-1 border border-yellow-300 rounded-xl px-3 py-2 text-sm bg-white/80">
+          <input type="number" id="newRewardCost" placeholder="Bedel" class="w-20 border border-yellow-300 rounded-xl px-3 py-2 text-sm bg-white/80">
+          <button onclick="addReward()" class="bg-yellow-500 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95 shadow-sm">Ekle</button>
+        </div>
+        <div id="rewardsList" class="space-y-2">
+          <p class="text-xs text-slate-400">Yükleniyor...</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- SEKME 3: İSTEKLER -->
+    <div id="tab-requests" class="space-y-6 tab-hidden">
+      <!-- İstek Gönder -->
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">💡 Ödüllü İstek Gönder</h2>
+        <div class="flex gap-2 mb-2">
+          <input type="text" id="requestInput" placeholder="Örn: Kahve yap..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
+          <input type="number" id="requestPoints" placeholder="Puan" class="w-20 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
+          <button onclick="addRequest()" class="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95">Gönder</button>
+        </div>
+      </div>
+
+      <!-- Gelen İstekler -->
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">📩 Gelen İstekler</h2>
+        <div id="requestsList" class="space-y-2">
+          <p class="text-xs text-slate-400">Yükleniyor...</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- SEKME 4: GEÇMİŞ -->
+    <div id="tab-history" class="space-y-6 tab-hidden">
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 min-h-[50vh]">
+        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">⏱️ Son Yapılan İşler</h2>
+        <div id="historyList" class="space-y-2">
+          <p class="text-xs text-slate-400">Yükleniyor...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ALT MENÜ (MOBİL TAB BAR) -->
+  <div class="fixed bottom-0 left-0 right-0 glass-bottom pb-safe z-50">
+    <div class="max-w-md mx-auto flex justify-around items-center py-2">
       
-      <div class="flex gap-2 mb-4">
-        <input type="text" id="newRewardTitle" placeholder="Ödül (Örn: Dondurma)" class="flex-1 border border-yellow-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white/80">
-        <input type="number" id="newRewardCost" placeholder="Bedel" class="w-20 border border-yellow-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white/80">
-        <button onclick="addReward()" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm">Ekle</button>
-      </div>
+      <button onclick="switchTab('home', this)" class="nav-btn active flex flex-col items-center justify-center w-full py-1">
+        <span class="text-2xl mb-1">🏠</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Görevler</span>
+      </button>
 
-      <div id="rewardsList" class="space-y-2">
-        <p class="text-xs text-slate-400">Yükleniyor...</p>
-      </div>
+      <button onclick="switchTab('market', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
+        <span class="text-2xl mb-1">🎁</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Market</span>
+      </button>
+
+      <button onclick="switchTab('requests', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
+        <span class="text-2xl mb-1">💡</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">İstekler</span>
+      </button>
+
+      <button onclick="switchTab('history', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
+        <span class="text-2xl mb-1">⏱️</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Geçmiş</span>
+      </button>
+
     </div>
-
-    <!-- İstek Gönder -->
-    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-      <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-1">💡 Ödüllü İstek Gönder</h2>
-      <div class="flex gap-2">
-        <input type="text" id="requestInput" placeholder="Örn: Kahve yap..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-        <input type="number" id="requestPoints" placeholder="Puan" class="w-20 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-        <button onclick="addRequest()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm">Gönder</button>
-      </div>
-    </div>
-
-    <!-- Gelen İstekler -->
-    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-      <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">📩 Gelen İstekler</h2>
-      <div id="requestsList" class="space-y-2">
-        <p class="text-xs text-slate-400">Yükleniyor...</p>
-      </div>
-    </div>
-
-    <!-- Görev Ekle & Yapılacaklar -->
-    <div class="bg-gradient-to-r from-slate-50 to-indigo-50 p-5 rounded-2xl card-shadow border border-indigo-100">
-      <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">✅ Kalıcı Görevler</h2>
-      <div class="flex gap-2 mb-4">
-        <input type="text" id="newTaskTitle" placeholder="Yeni Görev (Örn: Çöpü At)" class="flex-1 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80">
-        <input type="number" id="newTaskPoints" placeholder="Puan" class="w-20 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80">
-        <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm">Ekle</button>
-      </div>
-      <div id="tasksList" class="space-y-3">
-        <p class="text-xs text-slate-400">Görevler yükleniyor...</p>
-      </div>
-    </div>
-
-    <!-- GEÇMİŞ -->
-    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-      <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">⏱️ Son Yapılan İşler</h2>
-      <div id="historyList" class="space-y-2">
-        <p class="text-xs text-slate-400">Yükleniyor...</p>
-      </div>
-    </div>
-
   </div>
 
   <script>
@@ -132,6 +176,27 @@
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
     let currentUser = 'Yiğit';
+
+    // --- SEKME (TAB) DEĞİŞTİRME MANTIĞI ---
+    function switchTab(tabName, btnElement) {
+      // Bütün sekmeleri gizle
+      document.getElementById('tab-home').classList.add('tab-hidden');
+      document.getElementById('tab-market').classList.add('tab-hidden');
+      document.getElementById('tab-requests').classList.add('tab-hidden');
+      document.getElementById('tab-history').classList.add('tab-hidden');
+      
+      // Tıklanan sekmeyi göster
+      document.getElementById('tab-' + tabName).classList.remove('tab-hidden');
+
+      // Bütün butonlardan 'active' rengini kaldır
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-indigo-600'));
+      
+      // Tıklanan butona renk ver
+      if(btnElement) btnElement.classList.add('active', 'text-indigo-600');
+      
+      // Sayfanın en üstüne kaydır
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     function changeUser(user) {
       currentUser = user;
@@ -173,10 +238,10 @@
       container.innerHTML = data.map(p => `
         <div class="flex items-center justify-between bg-white/90 p-2.5 rounded-xl border border-red-200 shadow-sm group">
           <div class="flex items-center gap-2">
-            <button onclick="deletePenalty('${p.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="Sil">🗑️</button>
+            <button onclick="deletePenalty('${p.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors">🗑️</button>
             <span class="text-sm font-semibold text-slate-800">${p.title}</span>
           </div>
-          <button onclick="applyPenalty(${p.points}, '${p.title.replace(/'/g, "\\'")}')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95">Ceza Kes (-${p.points})</button>
+          <button onclick="applyPenalty(${p.points}, '${p.title.replace(/'/g, "\\'")}')" class="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95">Ceza Kes (-${p.points})</button>
         </div>
       `).join('');
     }
@@ -186,10 +251,7 @@
       const pointsInput = document.getElementById('newPenaltyPoints');
       if (!titleInput.value.trim() || !pointsInput.value) return;
 
-      const title = titleInput.value.trim();
-      const points = parseInt(pointsInput.value);
-
-      const { error } = await db.from('penalties').insert([{ title, points }]);
+      const { error } = await db.from('penalties').insert([{ title: titleInput.value.trim(), points: parseInt(pointsInput.value) }]);
       if (error) alert('Ceza eklenemedi: ' + error.message);
       else { titleInput.value = ''; pointsInput.value = ''; loadPenalties(); }
     }
@@ -208,15 +270,8 @@
         const newPoints = (profile.points || 0) - points;
         await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
       }
-      
-      await db.from('task_history').insert([{ 
-        task_title: `🚨 CEZA YEDİ: ${penaltyTitle}`, 
-        points: -points, 
-        completed_by: currentUser 
-      }]);
-      
-      loadProfiles();
-      loadHistory();
+      await db.from('task_history').insert([{ task_title: `🚨 CEZA YEDİ: ${penaltyTitle}`, points: -points, completed_by: currentUser }]);
+      loadProfiles(); loadHistory();
     }
 
     // --- ÖDÜL SİSTEMİ FONKSİYONLARI ---
@@ -230,10 +285,10 @@
       container.innerHTML = data.map(r => `
         <div class="flex items-center justify-between bg-white/90 p-2.5 rounded-xl border border-yellow-200 shadow-sm group">
           <div class="flex items-center gap-2">
-            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="Sil">🗑️</button>
+            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors">🗑️</button>
             <span class="text-sm font-semibold text-slate-800">${r.title}</span>
           </div>
-          <button onclick="buyReward(${r.cost}, '${r.title.replace(/'/g, "\\'")}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95">-${r.cost} Puan</button>
+          <button onclick="buyReward(${r.cost}, '${r.title.replace(/'/g, "\\'")}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95">-${r.cost} Puan</button>
         </div>
       `).join('');
     }
@@ -243,10 +298,7 @@
       const costInput = document.getElementById('newRewardCost');
       if (!titleInput.value.trim() || !costInput.value) return;
 
-      const title = titleInput.value.trim();
-      const cost = parseInt(costInput.value);
-
-      const { error } = await db.from('rewards').insert([{ title, cost }]);
+      const { error } = await db.from('rewards').insert([{ title: titleInput.value.trim(), cost: parseInt(costInput.value) }]);
       if (error) alert('Ödül eklenemedi: ' + error.message);
       else { titleInput.value = ''; costInput.value = ''; loadRewards(); }
     }
@@ -259,25 +311,16 @@
 
     async function buyReward(cost, rewardName) {
       const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
-      if (!profile || (profile.points || 0) < cost) {
-        alert('Bu ödülü almak için puanın yetersiz! 🧹');
-        return;
-      }
+      if (!profile || (profile.points || 0) < cost) { alert('Puanın yetersiz! 🧹'); return; }
 
-      if(!confirm(`'${rewardName}' ödülünü ${cost} puan harcayarak almak istediğine emin misin?`)) return;
+      if(!confirm(`'${rewardName}' ödülünü almak istediğine emin misin?`)) return;
 
       const newPoints = profile.points - cost;
       await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
-      
-      await db.from('task_history').insert([{ 
-        task_title: `🎁 ÖDÜL KULLANILDI: ${rewardName}`, 
-        points: -cost, 
-        completed_by: currentUser 
-      }]);
+      await db.from('task_history').insert([{ task_title: `🎁 ÖDÜL KULLANILDI: ${rewardName}`, points: -cost, completed_by: currentUser }]);
       
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      loadProfiles();
-      loadHistory();
+      loadProfiles(); loadHistory();
     }
 
     // --- GÖREV FONKSİYONLARI ---
@@ -286,16 +329,13 @@
       const pointsInput = document.getElementById('newTaskPoints');
       if (!titleInput.value.trim() || !pointsInput.value) return;
 
-      const title = titleInput.value.trim();
-      const points = parseInt(pointsInput.value);
-
-      const { error } = await db.from('tasks').insert([{ title, points }]);
+      const { error } = await db.from('tasks').insert([{ title: titleInput.value.trim(), points: parseInt(pointsInput.value) }]);
       if (error) alert('Görev eklenemedi: ' + error.message);
       else { titleInput.value = ''; pointsInput.value = ''; loadTasks(); }
     }
 
     async function deleteTask(id) {
-      if(!confirm('Bu görevi listeden silmek istediğinize emin misiniz?')) return;
+      if(!confirm('Görevi silmek istediğinize emin misiniz?')) return;
       await db.from('tasks').delete().eq('id', id);
       loadTasks();
     }
@@ -308,15 +348,15 @@
         return;
       }
       container.innerHTML = data.map(t => `
-        <div class="flex items-center justify-between p-3 bg-white/80 border border-indigo-100 rounded-xl group shadow-sm">
+        <div class="flex items-center justify-between p-3 bg-white/80 border border-indigo-100 rounded-xl shadow-sm group">
           <div class="flex items-center gap-2">
-            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="Sil">🗑️</button>
+            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors">🗑️</button>
             <div>
               <h3 class="font-bold text-slate-700 text-sm">${t.title}</h3>
               <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-0.5">+${t.points} Puan</span>
             </div>
           </div>
-          <button onclick="completeTask('${t.id}', '${t.title.replace(/'/g, "\\'")}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all active:scale-95 shadow-sm">Yaptım ➔</button>
+          <button onclick="completeTask('${t.id}', '${t.title.replace(/'/g, "\\'")}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 shadow-sm">Yaptım ➔</button>
         </div>
       `).join('');
     }
@@ -326,27 +366,22 @@
       if (profile) {
         const newPoints = (profile.points || 0) + points;
         await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
-        loadProfiles();
       }
       await db.from('task_history').insert([{ task_title: taskTitle, points: points, completed_by: currentUser }]);
-      
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      loadHistory();
+      loadProfiles(); loadHistory();
     }
 
     // --- GEÇMİŞ FONKSİYONLARI ---
     async function deleteHistory(id, points, completedBy) {
-      if(!confirm('Bu işlemi iptal edip geçmişten silmek istediğinize emin misiniz? (Kazanılan/Harcanan puanlar geri alınacaktır!)')) return;
-
+      if(!confirm('İşlemi iptal edip puanları geri almak istediğinize emin misiniz?')) return;
       const { data: profile } = await db.from('profiles').select('*').eq('name', completedBy).single();
       if (profile) {
         const newPoints = (profile.points || 0) - points;
         await db.from('profiles').update({ points: newPoints }).eq('name', completedBy);
-        loadProfiles();
       }
-
       await db.from('task_history').delete().eq('id', id);
-      loadHistory();
+      loadProfiles(); loadHistory();
     }
 
     async function loadHistory() {
@@ -363,17 +398,14 @@
         
         let pointClass = "text-emerald-600 bg-emerald-50";
         let pointSign = "+";
-        
         if (h.points < 0) {
             pointSign = "";
-            if(h.task_title.includes('CEZA')) pointClass = "text-red-700 bg-red-100";
-            else pointClass = "text-yellow-700 bg-yellow-100";
+            pointClass = h.task_title.includes('CEZA') ? "text-red-700 bg-red-100" : "text-yellow-700 bg-yellow-100";
         }
-
         return `
-          <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm group transition-colors hover:bg-slate-100">
+          <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm transition-colors hover:bg-slate-100">
             <div class="flex items-center gap-3">
-              <button onclick="deleteHistory('${h.id}', ${h.points}, '${h.completed_by}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="İşlemi Geri Al">🗑️</button>
+              <button onclick="deleteHistory('${h.id}', ${h.points}, '${h.completed_by}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors">🗑️</button>
               <div>
                 <span class="font-bold text-slate-700 block">${h.task_title}</span>
                 <span class="text-[11px] font-semibold text-slate-400 block mt-0.5">${h.completed_by} • ${dateStr} ${timeStr}</span>
@@ -391,10 +423,7 @@
       const pointsInput = document.getElementById('requestPoints');
       if (!input || !input.value.trim() || !pointsInput.value) return;
 
-      const text = input.value.trim();
-      const points = parseInt(pointsInput.value);
-
-      const { error } = await db.from('requests').insert([{ title: text, points: points, created_by: currentUser, status: 'pending' }]);
+      const { error } = await db.from('requests').insert([{ title: input.value.trim(), points: parseInt(pointsInput.value), created_by: currentUser, status: 'pending' }]);
       if (error) alert('İstek gönderilemedi: ' + error.message);
       else { input.value = ''; pointsInput.value = ''; fetchRequests(); }
     }
@@ -415,7 +444,7 @@
               <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded shadow-sm">Ödül: +${r.points || 0}</span>
             </div>
           </div>
-          <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0}, '${r.created_at}')" class="text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl font-bold hover:bg-emerald-200 transition-all active:scale-95 shadow-sm">Tamamla</button>
+          <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0}, '${r.created_at}')" class="text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl font-bold active:scale-95 shadow-sm">Tamamla</button>
         </div>
       `).join('');
     }
@@ -425,9 +454,7 @@
       
       let delayText = "";
       if (createdAt && createdAt !== 'undefined') {
-        const createdDate = new Date(createdAt);
-        const now = new Date();
-        const diffMs = now - createdDate;
+        const diffMs = new Date() - new Date(createdAt);
         const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
         const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         
@@ -436,31 +463,23 @@
         else delayText = ` (Anında yapıldı!)`;
       }
 
-      const historyTitle = `Özel İstek: ${title}${delayText}`;
-
       if (points > 0) {
         const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
         if (profile) {
           const newPoints = (profile.points || 0) + points;
           await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
-          loadProfiles();
         }
       }
-      
-      await db.from('task_history').insert([{ task_title: historyTitle, points: points, completed_by: currentUser }]);
-      
+      await db.from('task_history').insert([{ task_title: `Özel İstek: ${title}${delayText}`, points: points, completed_by: currentUser }]);
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      loadHistory();
-      fetchRequests();
+      loadProfiles(); loadHistory(); fetchRequests();
     }
 
-    // Sistemi Başlat
-    loadProfiles();
-    loadPenalties();
-    loadRewards();
-    fetchRequests();
-    loadTasks();
-    loadHistory();
+    // İlk Yüklemeler
+    loadProfiles(); loadPenalties(); loadRewards(); fetchRequests(); loadTasks(); loadHistory();
+    
+    // Uygulama açılışında 'Home' sekmesini aktif et (Alt menüdeki Görevler yazısını mavi yap)
+    document.querySelector('.nav-btn').classList.add('active', 'text-indigo-600');
   </script>
 </body>
 </html>
