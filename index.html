@@ -28,7 +28,7 @@
 
   <div class="max-w-md mx-auto p-4 space-y-6">
 
-    <!-- Puan Durumu (KİŞİYE ÖZEL SIFIRLAMA) -->
+    <!-- Puan Durumu -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">🏆 Puan Durumu</h2>
@@ -46,11 +46,10 @@
       </div>
     </div>
 
-    <!-- ÖDÜL MARKETİ (EKLE/ÇIKAR ÖZELLİKLİ) -->
+    <!-- ÖDÜL MARKETİ -->
     <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl shadow-sm border border-yellow-200">
       <h2 class="text-sm font-bold text-yellow-800 mb-3 uppercase tracking-wide">🎁 Ödül Marketi</h2>
       
-      <!-- Ödül Ekleme Alanı -->
       <div class="flex gap-2 mb-4">
         <input type="text" id="newRewardTitle" placeholder="Ödül (Örn: Dondurma)" class="flex-1 border border-yellow-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white">
         <input type="number" id="newRewardCost" placeholder="Bedel" class="w-20 border border-yellow-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white">
@@ -62,6 +61,7 @@
       </div>
     </div>
 
+    <!-- İstek Gönder -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">💡 Ödüllü İstek Gönder</h2>
       <div class="flex gap-2">
@@ -71,6 +71,7 @@
       </div>
     </div>
 
+    <!-- Gelen İstekler -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">📩 Gelen İstekler</h2>
       <div id="requestsList" class="space-y-2">
@@ -78,6 +79,7 @@
       </div>
     </div>
 
+    <!-- Görev Ekle -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 bg-indigo-50">
       <h2 class="text-sm font-bold text-indigo-800 mb-2 uppercase tracking-wide">➕ Listeye Kalıcı Görev Ekle</h2>
       <div class="flex gap-2">
@@ -87,6 +89,7 @@
       </div>
     </div>
 
+    <!-- Görev Listesi -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">✅ Yapılacak Görevler</h2>
       <div id="tasksList" class="space-y-3">
@@ -94,6 +97,7 @@
       </div>
     </div>
 
+    <!-- GEÇMİŞ (SİLME BUTONU EKLENDİ) -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">⏱️ Son Yapılan İşler</h2>
       <div id="historyList" class="space-y-2">
@@ -133,14 +137,12 @@
       }
     }
 
-    // YENİ: Sadece Kendi Puanını Sıfırla
     async function resetMyPoints() {
       if(!confirm(`Sadece kendi (${currentUser}) puanını sıfırlamak istediğine emin misin?`)) return;
       await db.from('profiles').update({ points: 0 }).eq('name', currentUser);
       loadProfiles();
     }
 
-    // YENİ: Ödül Marketi Fonksiyonları
     async function loadRewards() {
       const { data } = await db.from('rewards').select('*').order('cost', { ascending: true });
       const container = document.getElementById('rewardsList');
@@ -254,6 +256,23 @@
       loadHistory();
     }
 
+    // YENİ: GEÇMİŞİ SİLME (İŞLEMİ GERİ ALMA) FONKSİYONU
+    async function deleteHistory(id, points, completedBy) {
+      if(!confirm('Bu işlemi iptal edip geçmişten silmek istediğinize emin misiniz? (Kazanılan/Harcanan puanlar geri alınacaktır!)')) return;
+
+      // 1. İşlemi yapan kişinin puanını geri al (artıysa düşer, eksi ise ekler)
+      const { data: profile } = await db.from('profiles').select('*').eq('name', completedBy).single();
+      if (profile) {
+        const newPoints = (profile.points || 0) - points;
+        await db.from('profiles').update({ points: newPoints }).eq('name', completedBy);
+        loadProfiles();
+      }
+
+      // 2. İşlemi geçmişten sil
+      await db.from('task_history').delete().eq('id', id);
+      loadHistory();
+    }
+
     async function loadHistory() {
       const { data } = await db.from('task_history').select('*').order('completed_at', { ascending: false }).limit(10);
       const container = document.getElementById('historyList');
@@ -270,10 +289,13 @@
         const pointSign = h.points > 0 ? "+" : "";
 
         return `
-          <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm">
-            <div>
-              <span class="font-semibold text-slate-700 block">${h.task_title}</span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">${h.completed_by} • ${dateStr} ${timeStr}</span>
+          <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm group">
+            <div class="flex items-center gap-2">
+              <button onclick="deleteHistory('${h.id}', ${h.points}, '${h.completed_by}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="İşlemi İptal Et / Sil">🗑️</button>
+              <div>
+                <span class="font-semibold text-slate-700 block">${h.task_title}</span>
+                <span class="text-[11px] text-slate-400 block mt-0.5">${h.completed_by} • ${dateStr} ${timeStr}</span>
+              </div>
             </div>
             <span class="text-xs font-bold px-2 py-1 rounded-md ${pointClass}">${pointSign}${h.points}</span>
           </div>
@@ -318,11 +340,9 @@
       `).join('');
     }
 
-    // YENİ: Gecikme Hesaplamalı Tamamlama
     async function completeRequest(id, title, points, createdAt) {
       await db.from('requests').update({ status: 'completed' }).eq('id', id);
       
-      // Saat ve Dakika Gecikmesini Hesapla
       let delayText = "";
       if (createdAt && createdAt !== 'undefined') {
         const createdDate = new Date(createdAt);
@@ -359,7 +379,7 @@
     }
 
     loadProfiles();
-    loadRewards(); // Ödülleri çek
+    loadRewards();
     fetchRequests();
     loadTasks();
     loadHistory();
