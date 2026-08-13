@@ -104,7 +104,7 @@
       }
     }
 
-    // YENİ: Yeni Görev Ekleme Fonksiyonu
+    // Yeni Görev Ekleme Fonksiyonu
     async function addTask() {
       const titleInput = document.getElementById('newTaskTitle');
       const pointsInput = document.getElementById('newTaskPoints');
@@ -123,7 +123,7 @@
       }
     }
 
-    // YENİ: Görevi Listeden Silme Fonksiyonu
+    // Görevi Listeden Silme Fonksiyonu
     async function deleteTask(id) {
       if(!confirm('Bu görevi listeden silmek istediğinize emin misiniz?')) return;
       await db.from('tasks').delete().eq('id', id);
@@ -169,7 +169,7 @@
       loadHistory();
     }
 
-    // YENİ: Geçmişi Yükle ve Ekranda Göster
+    // Geçmişi Yükle ve Ekranda Göster
     async function loadHistory() {
       const { data } = await db.from('task_history').select('*').order('completed_at', { ascending: false }).limit(10);
       const container = document.getElementById('historyList');
@@ -179,20 +179,19 @@
       }
       
       container.innerHTML = data.map(h => {
-        // Tarihi Türkiye saat dilimine ve formatına göre ayarla
         const dateObj = new Date(h.completed_at);
         const dateStr = dateObj.toLocaleDateString('tr-TR');
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         
-        return \`
+        return `
           <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm">
             <div>
-              <span class="font-semibold text-slate-700 block">\${h.task_title}</span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">\${h.completed_by} yaptı • \${dateStr} \${timeStr}</span>
+              <span class="font-semibold text-slate-700 block">${h.task_title}</span>
+              <span class="text-[11px] text-slate-400 block mt-0.5">${h.completed_by} yaptı • ${dateStr} ${timeStr}</span>
             </div>
-            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">+\${h.points}</span>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">+${h.points}</span>
           </div>
-        \`;
+        `;
       }).join('');
     }
 
