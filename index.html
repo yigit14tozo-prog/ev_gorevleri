@@ -97,7 +97,26 @@
         if (partner) document.getElementById('partnerPoints').innerText = partner.points;
       }
     }
+async function addRequest() {
+      const input = document.getElementById('requestInput');
+      if (!input || !input.value.trim()) return;
 
+      const text = input.value.trim();
+      const { data, error } = await supabase
+        .from('requests')
+        .insert([{ title: text, created_by: currentUser, status: 'pending' }]);
+
+      if (error) {
+        console.error('Hata:', error);
+        alert('İstek gönderilemedi: ' + error.message);
+      } else {
+        input.value = '';
+        if (typeof fetchRequests === 'function') fetchRequests();
+      }
+    }
+
+    async function loadTasks() {
+      // Var olan kodların buradan devam edecek...
     async function loadTasks() {
       const { data } = await supabase.from('tasks').select('*').order('created_at', { ascending: true });
       const container = document.getElementById('tasksList');
