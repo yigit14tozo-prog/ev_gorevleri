@@ -51,11 +51,29 @@
       </div>
     </div>
 
+    <!-- YENİ GÖREV EKLEME ALANI -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 bg-indigo-50">
+      <h2 class="text-sm font-bold text-indigo-800 mb-2 uppercase tracking-wide">➕ Listeye Yeni Görev Ekle</h2>
+      <div class="flex gap-2">
+        <input type="text" id="newTaskTitle" placeholder="Görev Adı (Örn: Çöpü At)" class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="number" id="newTaskPoints" placeholder="Puan" class="w-20 border border-indigo-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">Ekle</button>
+      </div>
+    </div>
+
     <!-- Görev Listesi -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">✅ Yapılacak Görevler</h2>
       <div id="tasksList" class="space-y-3">
         <p class="text-xs text-slate-400">Görevler yükleniyor...</p>
+      </div>
+    </div>
+
+    <!-- YENİ: GEÇMİŞ VE TARİHLER -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">⏱️ Son Yapılan İşler</h2>
+      <div id="historyList" class="space-y-2">
+        <p class="text-xs text-slate-400">Yükleniyor...</p>
       </div>
     </div>
 
@@ -66,7 +84,6 @@
     const SUPABASE_URL = 'https://wbbztdstalznijwutydz.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_KoiM7IPTmTf7-kDucRq-GA_VFE-no9T';
     
-    // Çakışmayı önlemek için veritabanı bağlantısını 'db' olarak başlattık
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = 'Ben';
@@ -87,6 +104,98 @@
       }
     }
 
+    // YENİ: Yeni Görev Ekleme Fonksiyonu
+    async function addTask() {
+      const titleInput = document.getElementById('newTaskTitle');
+      const pointsInput = document.getElementById('newTaskPoints');
+      if (!titleInput.value.trim() || !pointsInput.value) return;
+
+      const title = titleInput.value.trim();
+      const points = parseInt(pointsInput.value);
+
+      const { error } = await db.from('tasks').insert([{ title, points }]);
+      if (error) {
+        alert('Görev eklenemedi: ' + error.message);
+      } else {
+        titleInput.value = '';
+        pointsInput.value = '';
+        loadTasks();
+      }
+    }
+
+    // YENİ: Görevi Listeden Silme Fonksiyonu
+    async function deleteTask(id) {
+      if(!confirm('Bu görevi listeden silmek istediğinize emin misiniz?')) return;
+      await db.from('tasks').delete().eq('id', id);
+      loadTasks();
+    }
+
+    async function loadTasks() {
+      const { data } = await db.from('tasks').select('*');
+      const container = document.getElementById('tasksList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Görev bulunamadı.</p>';
+        return;
+      }
+      container.innerHTML = data.map(t => `
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-lg group">
+          <div class="flex items-center gap-2">
+            <button onclick="deleteTask('${t.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="Görevi Sil">🗑️</button>
+            <div>
+              <h3 class="font-semibold text-slate-800 text-sm">${t.title}</h3>
+              <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">+${t.points} Puan</span>
+            </div>
+          </div>
+          <button onclick="completeTask('${t.id}', '${t.title.replace(/'/g, "\\'")}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors">Tamamladım ➔</button>
+        </div>
+      `).join('');
+    }
+
+    async function completeTask(taskId, taskTitle, points) {
+      // 1. Puanı Ekle
+      const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
+      if (profile) {
+        const newPoints = (profile.points || 0) + points;
+        await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
+        loadProfiles();
+      }
+      
+      // 2. Geçmişe Tarih ile Kaydet
+      await db.from('task_history').insert([{
+        task_title: taskTitle,
+        points: points,
+        completed_by: currentUser
+      }]);
+      loadHistory();
+    }
+
+    // YENİ: Geçmişi Yükle ve Ekranda Göster
+    async function loadHistory() {
+      const { data } = await db.from('task_history').select('*').order('completed_at', { ascending: false }).limit(10);
+      const container = document.getElementById('historyList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Henüz tamamlanan bir iş yok.</p>';
+        return;
+      }
+      
+      container.innerHTML = data.map(h => {
+        // Tarihi Türkiye saat dilimine ve formatına göre ayarla
+        const dateObj = new Date(h.completed_at);
+        const dateStr = dateObj.toLocaleDateString('tr-TR');
+        const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        
+        return \`
+          <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm">
+            <div>
+              <span class="font-semibold text-slate-700 block">\${h.task_title}</span>
+              <span class="text-[11px] text-slate-400 block mt-0.5">\${h.completed_by} yaptı • \${dateStr} \${timeStr}</span>
+            </div>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">+\${h.points}</span>
+          </div>
+        \`;
+      }).join('');
+    }
+
     async function addRequest() {
       const input = document.getElementById('requestInput');
       if (!input || !input.value.trim()) return;
@@ -97,7 +206,6 @@
         .insert([{ title: text, created_by: currentUser, status: 'pending' }]);
 
       if (error) {
-        console.error('Hata:', error);
         alert('İstek gönderilemedi: ' + error.message);
       } else {
         input.value = '';
@@ -128,37 +236,11 @@
       fetchRequests();
     }
 
-    async function loadTasks() {
-      const { data } = await db.from('tasks').select('*');
-      const container = document.getElementById('tasksList');
-      if (!data || data.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400">Görev bulunamadı.</p>';
-        return;
-      }
-      container.innerHTML = data.map(t => `
-        <div class="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-lg">
-          <div>
-            <h3 class="font-semibold text-slate-800 text-sm">${t.title}</h3>
-            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">+${t.points} Puan</span>
-          </div>
-          <button onclick="completeTask('${t.id}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors">Tamamladım ➔</button>
-        </div>
-      `).join('');
-    }
-
-    async function completeTask(taskId, points) {
-      const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
-      if (profile) {
-        const newPoints = (profile.points || 0) + points;
-        await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
-        loadProfiles();
-      }
-    }
-
-    // Sayfa Yüklendiğinde Çalıştır
+    // Sayfa Yüklendiğinde Her Şeyi Çalıştır
     loadProfiles();
     fetchRequests();
     loadTasks();
+    loadHistory();
   </script>
 </body>
 </html>
