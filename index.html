@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- TELEFON UYGULAMASI HİSSİ (PWA) İÇİN EKLENTİLER -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#4f46e5">
@@ -13,13 +12,10 @@
   <title>Ev Görevleri & Puan Tablosu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- KONFETİ EFEKTİ KÜTÜPHANESİ -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
 
-  <!-- Üst Başlık & Kullanıcı Seçimi -->
   <div class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-50">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold tracking-tight">🏠 Ev Görevleri</h1>
@@ -32,11 +28,11 @@
 
   <div class="max-w-md mx-auto p-4 space-y-6">
 
-    <!-- Puan Durumu Kartı (LİDERLİK TACLI) -->
+    <!-- Puan Durumu (KİŞİYE ÖZEL SIFIRLAMA) -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">🏆 Puan Durumu</h2>
-        <button onclick="resetPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm border border-red-100">🔄 Sıfırla</button>
+        <button onclick="resetMyPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm border border-red-100" title="Sadece Kendi Puanımı Sıfırla">🔄 Sıfırla</button>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div class="text-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -50,26 +46,22 @@
       </div>
     </div>
 
-    <!-- YENİ: ÖDÜL MARKETİ -->
+    <!-- ÖDÜL MARKETİ (EKLE/ÇIKAR ÖZELLİKLİ) -->
     <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl shadow-sm border border-yellow-200">
       <h2 class="text-sm font-bold text-yellow-800 mb-3 uppercase tracking-wide">🎁 Ödül Marketi</h2>
-      <div class="space-y-2">
-        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
-          <span class="text-sm font-semibold text-slate-700">🎬 Film Gecesi (Sen Seç)</span>
-          <button onclick="buyReward(50, 'Film Gecesi (Sen Seç)')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-50 Puan</button>
-        </div>
-        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
-          <span class="text-sm font-semibold text-slate-700">☕ Yatağa Kahve/Çay</span>
-          <button onclick="buyReward(100, 'Yatağa Kahve/Çay')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-100 Puan</button>
-        </div>
-        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
-          <span class="text-sm font-semibold text-slate-700">💆‍♀️ 15 Dk Masaj</span>
-          <button onclick="buyReward(200, '15 Dk Masaj')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-200 Puan</button>
-        </div>
+      
+      <!-- Ödül Ekleme Alanı -->
+      <div class="flex gap-2 mb-4">
+        <input type="text" id="newRewardTitle" placeholder="Ödül (Örn: Dondurma)" class="flex-1 border border-yellow-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white">
+        <input type="number" id="newRewardCost" placeholder="Bedel" class="w-20 border border-yellow-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white">
+        <button onclick="addReward()" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors">Ekle</button>
+      </div>
+
+      <div id="rewardsList" class="space-y-2">
+        <p class="text-xs text-slate-400">Yükleniyor...</p>
       </div>
     </div>
 
-    <!-- İstek / Bilet Oluştur -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">💡 Ödüllü İstek Gönder</h2>
       <div class="flex gap-2">
@@ -79,7 +71,6 @@
       </div>
     </div>
 
-    <!-- Gelen İstekler Listesi -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">📩 Gelen İstekler</h2>
       <div id="requestsList" class="space-y-2">
@@ -87,7 +78,6 @@
       </div>
     </div>
 
-    <!-- Görev Ekleme Alanı -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 bg-indigo-50">
       <h2 class="text-sm font-bold text-indigo-800 mb-2 uppercase tracking-wide">➕ Listeye Kalıcı Görev Ekle</h2>
       <div class="flex gap-2">
@@ -97,7 +87,6 @@
       </div>
     </div>
 
-    <!-- Görev Listesi -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">✅ Yapılacak Görevler</h2>
       <div id="tasksList" class="space-y-3">
@@ -105,7 +94,6 @@
       </div>
     </div>
 
-    <!-- Geçmiş -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">⏱️ Son Yapılan İşler</h2>
       <div id="historyList" class="space-y-2">
@@ -137,7 +125,6 @@
         const myPts = me ? me.points || 0 : 0;
         const partnerPts = partner ? partner.points || 0 : 0;
         
-        // LİDERLİK TACI MANTIĞI
         const myCrown = myPts > partnerPts && myPts > 0 ? ' 👑' : '';
         const partnerCrown = partnerPts > myPts && partnerPts > 0 ? ' 👑' : '';
 
@@ -146,39 +133,72 @@
       }
     }
 
-    // YENİ: ÖDÜL SATIN ALMA FONKSİYONU
+    // YENİ: Sadece Kendi Puanını Sıfırla
+    async function resetMyPoints() {
+      if(!confirm(`Sadece kendi (${currentUser}) puanını sıfırlamak istediğine emin misin?`)) return;
+      await db.from('profiles').update({ points: 0 }).eq('name', currentUser);
+      loadProfiles();
+    }
+
+    // YENİ: Ödül Marketi Fonksiyonları
+    async function loadRewards() {
+      const { data } = await db.from('rewards').select('*').order('cost', { ascending: true });
+      const container = document.getElementById('rewardsList');
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">Markette şu an ödül yok.</p>';
+        return;
+      }
+      container.innerHTML = data.map(r => `
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-200 shadow-sm group">
+          <div class="flex items-center gap-2">
+            <button onclick="deleteReward('${r.id}')" class="text-slate-300 hover:text-red-500 text-lg transition-colors" title="Ödülü Sil">🗑️</button>
+            <span class="text-sm font-semibold text-slate-700">${r.title}</span>
+          </div>
+          <button onclick="buyReward(${r.cost}, '${r.title.replace(/'/g, "\\'")}')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-${r.cost} Puan</button>
+        </div>
+      `).join('');
+    }
+
+    async function addReward() {
+      const titleInput = document.getElementById('newRewardTitle');
+      const costInput = document.getElementById('newRewardCost');
+      if (!titleInput.value.trim() || !costInput.value) return;
+
+      const title = titleInput.value.trim();
+      const cost = parseInt(costInput.value);
+
+      const { error } = await db.from('rewards').insert([{ title, cost }]);
+      if (error) alert('Ödül eklenemedi: ' + error.message);
+      else { titleInput.value = ''; costInput.value = ''; loadRewards(); }
+    }
+
+    async function deleteReward(id) {
+      if(!confirm('Bu ödülü marketten silmek istediğinize emin misiniz?')) return;
+      await db.from('rewards').delete().eq('id', id);
+      loadRewards();
+    }
+
     async function buyReward(cost, rewardName) {
       const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
       if (!profile || (profile.points || 0) < cost) {
-        alert('Bu ödülü almak için puanın yetersiz! Biraz daha görev yapmalısın. 🧹');
+        alert('Bu ödülü almak için puanın yetersiz! 🧹');
         return;
       }
 
       if(!confirm(`'${rewardName}' ödülünü ${cost} puan harcayarak almak istediğine emin misin?`)) return;
 
-      // Puanı Düş
       const newPoints = profile.points - cost;
       await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
       
-      // Geçmişe Kaydet
       await db.from('task_history').insert([{ 
         task_title: `🎁 ÖDÜL KULLANILDI: ${rewardName}`, 
         points: -cost, 
         completed_by: currentUser 
       }]);
       
-      // Kutlama Efekti
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      
       loadProfiles();
       loadHistory();
-    }
-
-    async function resetPoints() {
-      if(!confirm('İkinizin de puanlarını sıfırlamak istediğinize emin misiniz?')) return;
-      await db.from('profiles').update({ points: 0 }).eq('name', 'Yiğit');
-      await db.from('profiles').update({ points: 0 }).eq('name', 'Buse');
-      loadProfiles();
     }
 
     async function addTask() {
@@ -230,9 +250,7 @@
       }
       await db.from('task_history').insert([{ task_title: taskTitle, points: points, completed_by: currentUser }]);
       
-      // KONFETİ PATLAT
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      
       loadHistory();
     }
 
@@ -248,7 +266,6 @@
         const dateStr = dateObj.toLocaleDateString('tr-TR');
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         
-        // Puan harcandıysa (eksi puansa) kırmızı yap
         const pointClass = h.points < 0 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50";
         const pointSign = h.points > 0 ? "+" : "";
 
@@ -296,14 +313,35 @@
               <span class="text-[11px] font-bold text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded">Ödül: +${r.points || 0}</span>
             </div>
           </div>
-          <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0})" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-md font-semibold hover:bg-emerald-200 transition-colors">Tamamla</button>
+          <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0}, '${r.created_at}')" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-md font-semibold hover:bg-emerald-200 transition-colors">Tamamla</button>
         </div>
       `).join('');
     }
 
-    async function completeRequest(id, title, points) {
+    // YENİ: Gecikme Hesaplamalı Tamamlama
+    async function completeRequest(id, title, points, createdAt) {
       await db.from('requests').update({ status: 'completed' }).eq('id', id);
       
+      // Saat ve Dakika Gecikmesini Hesapla
+      let delayText = "";
+      if (createdAt && createdAt !== 'undefined') {
+        const createdDate = new Date(createdAt);
+        const now = new Date();
+        const diffMs = now - createdDate;
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (diffHrs > 0) {
+            delayText = ` (İstekten ${diffHrs} saat ${diffMins} dk sonra yapıldı)`;
+        } else if (diffMins > 0) {
+            delayText = ` (İstekten ${diffMins} dk sonra yapıldı)`;
+        } else {
+            delayText = ` (Anında yapıldı!)`;
+        }
+      }
+
+      const historyTitle = `Özel İstek: ${title}${delayText}`;
+
       if (points > 0) {
         const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
         if (profile) {
@@ -311,16 +349,17 @@
           await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
           loadProfiles();
         }
-        await db.from('task_history').insert([{ task_title: "Özel İstek: " + title, points: points, completed_by: currentUser }]);
-        
-        // İstek tamamlandığında da konfeti
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        loadHistory();
       }
+      
+      await db.from('task_history').insert([{ task_title: historyTitle, points: points, completed_by: currentUser }]);
+      
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      loadHistory();
       fetchRequests();
     }
 
     loadProfiles();
+    loadRewards(); // Ödülleri çek
     fetchRequests();
     loadTasks();
     loadHistory();
