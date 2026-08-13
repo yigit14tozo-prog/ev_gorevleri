@@ -14,8 +14,8 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold tracking-tight">🏠 Ev Görevleri</h1>
       <select id="userSelect" onchange="changeUser(this.value)" class="bg-indigo-700 text-white font-medium text-sm py-1.5 px-3 rounded-lg border border-indigo-500 focus:outline-none">
-        <option value="Ben">Profil: Ben</option>
-        <option value="O">Profil: O</option>
+        <option value="Yiğit">Profil: Yiğit</option>
+        <option value="Buse">Profil: Buse</option>
       </select>
     </div>
   </div>
@@ -86,7 +86,8 @@
     
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentUser = 'Ben';
+    // Varsayılan kullanıcıyı Yiğit yaptık
+    let currentUser = 'Yiğit';
 
     function changeUser(user) {
       currentUser = user;
