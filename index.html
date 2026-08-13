@@ -3,9 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- TELEFON UYGULAMASI HİSSİ (PWA) İÇİN EKLENTİLER -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/7594/7594072.png">
+  
   <title>Ev Görevleri & Puan Tablosu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- KONFETİ EFEKTİ KÜTÜPHANESİ -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
 
@@ -22,7 +32,7 @@
 
   <div class="max-w-md mx-auto p-4 space-y-6">
 
-    <!-- Puan Durumu Kartı -->
+    <!-- Puan Durumu Kartı (LİDERLİK TACLI) -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">🏆 Puan Durumu</h2>
@@ -40,7 +50,26 @@
       </div>
     </div>
 
-    <!-- İstek / Bilet Oluştur (YENİ PUAN KUTUSU EKLENDİ) -->
+    <!-- YENİ: ÖDÜL MARKETİ -->
+    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl shadow-sm border border-yellow-200">
+      <h2 class="text-sm font-bold text-yellow-800 mb-3 uppercase tracking-wide">🎁 Ödül Marketi</h2>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
+          <span class="text-sm font-semibold text-slate-700">🎬 Film Gecesi (Sen Seç)</span>
+          <button onclick="buyReward(50, 'Film Gecesi (Sen Seç)')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-50 Puan</button>
+        </div>
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
+          <span class="text-sm font-semibold text-slate-700">☕ Yatağa Kahve/Çay</span>
+          <button onclick="buyReward(100, 'Yatağa Kahve/Çay')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-100 Puan</button>
+        </div>
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-yellow-100 shadow-sm">
+          <span class="text-sm font-semibold text-slate-700">💆‍♀️ 15 Dk Masaj</span>
+          <button onclick="buyReward(200, '15 Dk Masaj')" class="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-xs font-bold px-3 py-1.5 rounded-md transition-colors">-200 Puan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- İstek / Bilet Oluştur -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">💡 Ödüllü İstek Gönder</h2>
       <div class="flex gap-2">
@@ -89,8 +118,8 @@
   <script>
     const SUPABASE_URL = 'https://wbbztdstalznijwutydz.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_KoiM7IPTmTf7-kDucRq-GA_VFE-no9T';
-    
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
     let currentUser = 'Yiğit';
 
     function changeUser(user) {
@@ -104,13 +133,49 @@
       if (data) {
         const me = data.find(p => p.name === currentUser);
         const partner = data.find(p => p.name !== currentUser);
-        if (me) document.getElementById('myPoints').innerText = me.points || 0;
-        if (partner) document.getElementById('partnerPoints').innerText = partner.points || 0;
+        
+        const myPts = me ? me.points || 0 : 0;
+        const partnerPts = partner ? partner.points || 0 : 0;
+        
+        // LİDERLİK TACI MANTIĞI
+        const myCrown = myPts > partnerPts && myPts > 0 ? ' 👑' : '';
+        const partnerCrown = partnerPts > myPts && partnerPts > 0 ? ' 👑' : '';
+
+        document.getElementById('myPoints').innerText = myPts + myCrown;
+        document.getElementById('partnerPoints').innerText = partnerPts + partnerCrown;
       }
     }
 
+    // YENİ: ÖDÜL SATIN ALMA FONKSİYONU
+    async function buyReward(cost, rewardName) {
+      const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
+      if (!profile || (profile.points || 0) < cost) {
+        alert('Bu ödülü almak için puanın yetersiz! Biraz daha görev yapmalısın. 🧹');
+        return;
+      }
+
+      if(!confirm(`'${rewardName}' ödülünü ${cost} puan harcayarak almak istediğine emin misin?`)) return;
+
+      // Puanı Düş
+      const newPoints = profile.points - cost;
+      await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
+      
+      // Geçmişe Kaydet
+      await db.from('task_history').insert([{ 
+        task_title: `🎁 ÖDÜL KULLANILDI: ${rewardName}`, 
+        points: -cost, 
+        completed_by: currentUser 
+      }]);
+      
+      // Kutlama Efekti
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      
+      loadProfiles();
+      loadHistory();
+    }
+
     async function resetPoints() {
-      if(!confirm('İkinizin de puanlarını sıfırlamak istediğinize emin misiniz? (Bu işlem geri alınamaz)')) return;
+      if(!confirm('İkinizin de puanlarını sıfırlamak istediğinize emin misiniz?')) return;
       await db.from('profiles').update({ points: 0 }).eq('name', 'Yiğit');
       await db.from('profiles').update({ points: 0 }).eq('name', 'Buse');
       loadProfiles();
@@ -151,7 +216,7 @@
               <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">+${t.points} Puan</span>
             </div>
           </div>
-          <button onclick="completeTask('${t.id}', '${t.title.replace(/'/g, "\\'")}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors">Tamamladım ➔</button>
+          <button onclick="completeTask('${t.id}', '${t.title.replace(/'/g, "\\'")}', ${t.points})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition-colors shadow-sm">Tamamladım ➔</button>
         </div>
       `).join('');
     }
@@ -164,6 +229,10 @@
         loadProfiles();
       }
       await db.from('task_history').insert([{ task_title: taskTitle, points: points, completed_by: currentUser }]);
+      
+      // KONFETİ PATLAT
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      
       loadHistory();
     }
 
@@ -178,19 +247,23 @@
         const dateObj = new Date(h.completed_at);
         const dateStr = dateObj.toLocaleDateString('tr-TR');
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        
+        // Puan harcandıysa (eksi puansa) kırmızı yap
+        const pointClass = h.points < 0 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50";
+        const pointSign = h.points > 0 ? "+" : "";
+
         return `
           <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm">
             <div>
               <span class="font-semibold text-slate-700 block">${h.task_title}</span>
-              <span class="text-[11px] text-slate-400 block mt-0.5">${h.completed_by} yaptı • ${dateStr} ${timeStr}</span>
+              <span class="text-[11px] text-slate-400 block mt-0.5">${h.completed_by} • ${dateStr} ${timeStr}</span>
             </div>
-            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">+${h.points}</span>
+            <span class="text-xs font-bold px-2 py-1 rounded-md ${pointClass}">${pointSign}${h.points}</span>
           </div>
         `;
       }).join('');
     }
 
-    // YENİ GÜNCELLENEN İSTEK FONKSİYONLARI
     async function addRequest() {
       const input = document.getElementById('requestInput');
       const pointsInput = document.getElementById('requestPoints');
@@ -229,10 +302,8 @@
     }
 
     async function completeRequest(id, title, points) {
-      // 1. İsteği listeden kaldır
       await db.from('requests').update({ status: 'completed' }).eq('id', id);
       
-      // 2. Tamamlayan kişiye puanı ekle
       if (points > 0) {
         const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
         if (profile) {
@@ -240,8 +311,10 @@
           await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
           loadProfiles();
         }
-        // 3. Geçmişe Özel İstek olarak ekle
         await db.from('task_history').insert([{ task_title: "Özel İstek: " + title, points: points, completed_by: currentUser }]);
+        
+        // İstek tamamlandığında da konfeti
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
         loadHistory();
       }
       fetchRequests();
