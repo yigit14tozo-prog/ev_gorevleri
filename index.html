@@ -22,7 +22,7 @@
 
   <div class="max-w-md mx-auto p-4 space-y-6">
 
-    <!-- Puan Durumu Kartı (YENİ RESET BUTONLU) -->
+    <!-- Puan Durumu Kartı -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">🏆 Puan Durumu</h2>
@@ -40,11 +40,12 @@
       </div>
     </div>
 
-    <!-- İstek / Bilet Oluştur -->
+    <!-- İstek / Bilet Oluştur (YENİ PUAN KUTUSU EKLENDİ) -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">💡 Yeni İstek Gönder</h2>
+      <h2 class="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">💡 Ödüllü İstek Gönder</h2>
       <div class="flex gap-2">
-        <input type="text" id="requestInput" placeholder="Örn: Kahve yap, Bulaşığa yardım et..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="text" id="requestInput" placeholder="Örn: Kahve yap..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <input type="number" id="requestPoints" placeholder="Puan" class="w-20 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <button onclick="addRequest()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">Gönder</button>
       </div>
     </div>
@@ -57,9 +58,9 @@
       </div>
     </div>
 
-    <!-- YENİ GÖREV EKLEME ALANI -->
+    <!-- Görev Ekleme Alanı -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 bg-indigo-50">
-      <h2 class="text-sm font-bold text-indigo-800 mb-2 uppercase tracking-wide">➕ Listeye Yeni Görev Ekle</h2>
+      <h2 class="text-sm font-bold text-indigo-800 mb-2 uppercase tracking-wide">➕ Listeye Kalıcı Görev Ekle</h2>
       <div class="flex gap-2">
         <input type="text" id="newTaskTitle" placeholder="Görev Adı (Örn: Çöpü At)" class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <input type="number" id="newTaskPoints" placeholder="Puan" class="w-20 border border-indigo-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -75,7 +76,7 @@
       </div>
     </div>
 
-    <!-- GEÇMİŞ VE TARİHLER -->
+    <!-- Geçmiş -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
       <h2 class="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">⏱️ Son Yapılan İşler</h2>
       <div id="historyList" class="space-y-2">
@@ -85,13 +86,11 @@
 
   </div>
 
-  <!-- JavaScript Kodları ve Supabase -->
   <script>
     const SUPABASE_URL = 'https://wbbztdstalznijwutydz.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_KoiM7IPTmTf7-kDucRq-GA_VFE-no9T';
     
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let currentUser = 'Yiğit';
 
     function changeUser(user) {
@@ -110,13 +109,10 @@
       }
     }
 
-    // YENİ: Puanları Sıfırlama Fonksiyonu
     async function resetPoints() {
       if(!confirm('İkinizin de puanlarını sıfırlamak istediğinize emin misiniz? (Bu işlem geri alınamaz)')) return;
-      
       await db.from('profiles').update({ points: 0 }).eq('name', 'Yiğit');
       await db.from('profiles').update({ points: 0 }).eq('name', 'Buse');
-      
       loadProfiles();
     }
 
@@ -129,13 +125,8 @@
       const points = parseInt(pointsInput.value);
 
       const { error } = await db.from('tasks').insert([{ title, points }]);
-      if (error) {
-        alert('Görev eklenemedi: ' + error.message);
-      } else {
-        titleInput.value = '';
-        pointsInput.value = '';
-        loadTasks();
-      }
+      if (error) alert('Görev eklenemedi: ' + error.message);
+      else { titleInput.value = ''; pointsInput.value = ''; loadTasks(); }
     }
 
     async function deleteTask(id) {
@@ -172,12 +163,7 @@
         await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
         loadProfiles();
       }
-      
-      await db.from('task_history').insert([{
-        task_title: taskTitle,
-        points: points,
-        completed_by: currentUser
-      }]);
+      await db.from('task_history').insert([{ task_title: taskTitle, points: points, completed_by: currentUser }]);
       loadHistory();
     }
 
@@ -188,12 +174,10 @@
         container.innerHTML = '<p class="text-xs text-slate-400">Henüz tamamlanan bir iş yok.</p>';
         return;
       }
-      
       container.innerHTML = data.map(h => {
         const dateObj = new Date(h.completed_at);
         const dateStr = dateObj.toLocaleDateString('tr-TR');
         const timeStr = dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-        
         return `
           <div class="flex items-center justify-between p-2.5 bg-white border border-slate-100 rounded-lg text-sm shadow-sm">
             <div>
@@ -206,21 +190,21 @@
       }).join('');
     }
 
+    // YENİ GÜNCELLENEN İSTEK FONKSİYONLARI
     async function addRequest() {
       const input = document.getElementById('requestInput');
-      if (!input || !input.value.trim()) return;
+      const pointsInput = document.getElementById('requestPoints');
+      if (!input || !input.value.trim() || !pointsInput.value) return;
 
       const text = input.value.trim();
+      const points = parseInt(pointsInput.value);
+
       const { error } = await db
         .from('requests')
-        .insert([{ title: text, created_by: currentUser, status: 'pending' }]);
+        .insert([{ title: text, points: points, created_by: currentUser, status: 'pending' }]);
 
-      if (error) {
-        alert('İstek gönderilemedi: ' + error.message);
-      } else {
-        input.value = '';
-        fetchRequests();
-      }
+      if (error) alert('İstek gönderilemedi: ' + error.message);
+      else { input.value = ''; pointsInput.value = ''; fetchRequests(); }
     }
 
     async function fetchRequests() {
@@ -231,18 +215,35 @@
         return;
       }
       container.innerHTML = data.map(r => `
-        <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
           <div>
             <span class="font-medium text-slate-800">${r.title}</span>
-            <span class="text-xs text-slate-400 block">Gönderen: ${r.created_by}</span>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-[11px] text-slate-400">Gönderen: ${r.created_by}</span>
+              <span class="text-[11px] font-bold text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded">Ödül: +${r.points || 0}</span>
+            </div>
           </div>
-          <button onclick="completeRequest('${r.id}')" class="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-md font-semibold hover:bg-emerald-200">Tamamla</button>
+          <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0})" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-md font-semibold hover:bg-emerald-200 transition-colors">Tamamla</button>
         </div>
       `).join('');
     }
 
-    async function completeRequest(id) {
+    async function completeRequest(id, title, points) {
+      // 1. İsteği listeden kaldır
       await db.from('requests').update({ status: 'completed' }).eq('id', id);
+      
+      // 2. Tamamlayan kişiye puanı ekle
+      if (points > 0) {
+        const { data: profile } = await db.from('profiles').select('*').eq('name', currentUser).single();
+        if (profile) {
+          const newPoints = (profile.points || 0) + points;
+          await db.from('profiles').update({ points: newPoints }).eq('name', currentUser);
+          loadProfiles();
+        }
+        // 3. Geçmişe Özel İstek olarak ekle
+        await db.from('task_history').insert([{ task_title: "Özel İstek: " + title, points: points, completed_by: currentUser }]);
+        loadHistory();
+      }
       fetchRequests();
     }
 
