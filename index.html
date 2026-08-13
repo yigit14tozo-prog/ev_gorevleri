@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#4f46e5">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/7594/7594072.png">
   
-  <title>Ev Görevleri & Puan Tablosu</title>
+  <title>EV SEVGİSİ & Puan Tablosu</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -20,20 +20,17 @@
     .glass-bottom { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05); }
     .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
     
-    /* Sekme gizleme sınıfı */
     .tab-hidden { display: none; }
-    
-    /* Menü ikonu aktif durumu */
     .nav-btn.active { color: #4f46e5; font-weight: 800; transform: scale(1.05); }
     .nav-btn { transition: all 0.2s ease-in-out; color: #94a3b8; }
   </style>
 </head>
 <body class="text-slate-800 font-sans pb-24 antialiased">
 
-  <!-- Üst Başlık (Sabit) -->
+  <!-- Üst Başlık -->
   <div class="glass-header text-white p-4 sticky top-0 z-50 shadow-lg">
     <div class="max-w-md mx-auto flex justify-between items-center">
-      <h1 class="text-xl font-extrabold tracking-tight drop-shadow-sm">🏠 Ev Görevleri</h1>
+      <h1 class="text-xl font-extrabold tracking-tight drop-shadow-sm">🏠 EV SEVGİSİ</h1>
       <select id="userSelect" onchange="changeUser(this.value)" class="bg-white/20 backdrop-blur-md text-white font-semibold text-sm py-1.5 px-3 rounded-xl border border-white/30 focus:outline-none">
         <option value="Yiğit" class="text-slate-800">Profil: Yiğit</option>
         <option value="Buse" class="text-slate-800">Profil: Buse</option>
@@ -43,7 +40,7 @@
 
   <div class="max-w-md mx-auto p-4 mt-2">
 
-    <!-- SEKME 1: ANA SAYFA (GÖREVLER VE PUAN) -->
+    <!-- SEKME 1: ANA SAYFA (Puan, İstekler ve Görevler Bir Arada) -->
     <div id="tab-home" class="space-y-6">
       
       <!-- PUAN DURUMU -->
@@ -64,9 +61,27 @@
         </div>
       </div>
 
+      <!-- GELEN İSTEKLER (ANA SAYFAYA TAŞINDI) -->
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-indigo-100">
+        <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">📩 Bekleyen İstekler</h2>
+        <div id="requestsList" class="space-y-2">
+          <p class="text-xs text-slate-400">Yükleniyor...</p>
+        </div>
+      </div>
+
+      <!-- İSTEK GÖNDER (ANA SAYFAYA TAŞINDI) -->
+      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
+        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">💡 Yeni İstek Gönder</h2>
+        <div class="flex gap-2">
+          <input type="text" id="requestInput" placeholder="Örn: Kahve yap..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 focus:outline-none">
+          <input type="number" id="requestPoints" placeholder="Puan" class="w-20 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 focus:outline-none">
+          <button onclick="addRequest()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95">İste</button>
+        </div>
+      </div>
+
       <!-- KALICI GÖREVLER -->
       <div class="bg-gradient-to-r from-slate-50 to-indigo-50 p-5 rounded-2xl card-shadow border border-indigo-100">
-        <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">✅ Yapılacak Görevler</h2>
+        <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">✅ Kalıcı Görevler</h2>
         <div class="flex gap-2 mb-4">
           <input type="text" id="newTaskTitle" placeholder="Yeni Görev (Örn: Çöpü At)" class="flex-1 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white/80">
           <input type="number" id="newTaskPoints" placeholder="Puan" class="w-20 border border-indigo-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white/80">
@@ -109,29 +124,7 @@
     </div>
 
 
-    <!-- SEKME 3: İSTEKLER -->
-    <div id="tab-requests" class="space-y-6 tab-hidden">
-      <!-- İstek Gönder -->
-      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">💡 Ödüllü İstek Gönder</h2>
-        <div class="flex gap-2 mb-2">
-          <input type="text" id="requestInput" placeholder="Örn: Kahve yap..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
-          <input type="number" id="requestPoints" placeholder="Puan" class="w-20 border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50">
-          <button onclick="addRequest()" class="bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl active:scale-95">Gönder</button>
-        </div>
-      </div>
-
-      <!-- Gelen İstekler -->
-      <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
-        <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">📩 Gelen İstekler</h2>
-        <div id="requestsList" class="space-y-2">
-          <p class="text-xs text-slate-400">Yükleniyor...</p>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- SEKME 4: GEÇMİŞ -->
+    <!-- SEKME 3: GEÇMİŞ -->
     <div id="tab-history" class="space-y-6 tab-hidden">
       <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 min-h-[50vh]">
         <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">⏱️ Son Yapılan İşler</h2>
@@ -143,23 +136,18 @@
 
   </div>
 
-  <!-- ALT MENÜ (MOBİL TAB BAR) -->
+  <!-- ALT MENÜ (SADELEŞTİRİLDİ - 3 BUTON) -->
   <div class="fixed bottom-0 left-0 right-0 glass-bottom pb-safe z-50">
     <div class="max-w-md mx-auto flex justify-around items-center py-2">
       
       <button onclick="switchTab('home', this)" class="nav-btn active flex flex-col items-center justify-center w-full py-1">
         <span class="text-2xl mb-1">🏠</span>
-        <span class="text-[10px] font-bold uppercase tracking-wider">Görevler</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider">Ana Ekran</span>
       </button>
 
       <button onclick="switchTab('market', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
         <span class="text-2xl mb-1">🎁</span>
         <span class="text-[10px] font-bold uppercase tracking-wider">Market</span>
-      </button>
-
-      <button onclick="switchTab('requests', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
-        <span class="text-2xl mb-1">💡</span>
-        <span class="text-[10px] font-bold uppercase tracking-wider">İstekler</span>
       </button>
 
       <button onclick="switchTab('history', this)" class="nav-btn flex flex-col items-center justify-center w-full py-1">
@@ -177,24 +165,17 @@
     
     let currentUser = 'Yiğit';
 
-    // --- SEKME (TAB) DEĞİŞTİRME MANTIĞI ---
+    // --- SEKME (TAB) DEĞİŞTİRME ---
     function switchTab(tabName, btnElement) {
-      // Bütün sekmeleri gizle
       document.getElementById('tab-home').classList.add('tab-hidden');
       document.getElementById('tab-market').classList.add('tab-hidden');
-      document.getElementById('tab-requests').classList.add('tab-hidden');
       document.getElementById('tab-history').classList.add('tab-hidden');
       
-      // Tıklanan sekmeyi göster
       document.getElementById('tab-' + tabName).classList.remove('tab-hidden');
 
-      // Bütün butonlardan 'active' rengini kaldır
       document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'text-indigo-600'));
-      
-      // Tıklanan butona renk ver
       if(btnElement) btnElement.classList.add('active', 'text-indigo-600');
       
-      // Sayfanın en üstüne kaydır
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -227,7 +208,7 @@
       loadProfiles();
     }
 
-    // --- CEZA SİSTEMİ FONKSİYONLARI ---
+    // --- CEZA SİSTEMİ ---
     async function loadPenalties() {
       const { data } = await db.from('penalties').select('*').order('points', { ascending: true });
       const container = document.getElementById('penaltiesList');
@@ -274,7 +255,7 @@
       loadProfiles(); loadHistory();
     }
 
-    // --- ÖDÜL SİSTEMİ FONKSİYONLARI ---
+    // --- ÖDÜL SİSTEMİ ---
     async function loadRewards() {
       const { data } = await db.from('rewards').select('*').order('cost', { ascending: true });
       const container = document.getElementById('rewardsList');
@@ -432,16 +413,16 @@
       const { data } = await db.from('requests').select('*').eq('status', 'pending');
       const container = document.getElementById('requestsList');
       if (!data || data.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400">Aktif istek bulunmuyor.</p>';
+        container.innerHTML = '<p class="text-xs text-slate-400">Bekleyen istek yok.</p>';
         return;
       }
       container.innerHTML = data.map(r => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm shadow-sm">
+        <div class="flex items-center justify-between p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-sm shadow-sm">
           <div>
             <span class="font-bold text-slate-700">${r.title}</span>
             <div class="flex items-center gap-2 mt-1">
-              <span class="text-[11px] font-semibold text-slate-400">Gönderen: ${r.created_by}</span>
-              <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded shadow-sm">Ödül: +${r.points || 0}</span>
+              <span class="text-[11px] font-bold text-indigo-600">🔔 ${r.created_by} senden bunu istiyor!</span>
+              <span class="text-[10px] font-bold text-pink-600 bg-pink-50 border border-pink-100 px-1.5 py-0.5 rounded shadow-sm">Ödül: +${r.points || 0}</span>
             </div>
           </div>
           <button onclick="completeRequest('${r.id}', '${r.title.replace(/'/g, "\\'")}', ${r.points || 0}, '${r.created_at}')" class="text-xs bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl font-bold active:scale-95 shadow-sm">Tamamla</button>
@@ -475,10 +456,8 @@
       loadProfiles(); loadHistory(); fetchRequests();
     }
 
-    // İlk Yüklemeler
+    // Başlat
     loadProfiles(); loadPenalties(); loadRewards(); fetchRequests(); loadTasks(); loadHistory();
-    
-    // Uygulama açılışında 'Home' sekmesini aktif et (Alt menüdeki Görevler yazısını mavi yap)
     document.querySelector('.nav-btn').classList.add('active', 'text-indigo-600');
   </script>
 </body>
