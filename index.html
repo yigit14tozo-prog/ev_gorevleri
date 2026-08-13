@@ -6,10 +6,12 @@
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- UYGULAMANIN ANA EKRAN İSMİNİ KISALTAN KOD BURADA -->
+  <meta name="apple-mobile-web-app-title" content="EV SEVGİSİ">
   <meta name="theme-color" content="#4f46e5">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/7594/7594072.png">
   
-  <title>EV SEVGİSİ & Puan Tablosu</title>
+  <title>EV SEVGİSİ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -23,45 +25,48 @@
     .tab-hidden { display: none; }
     .nav-btn.active { color: #4f46e5; font-weight: 800; transform: scale(1.05); }
     .nav-btn { transition: all 0.2s ease-in-out; color: #94a3b8; }
+    
+    .user-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
   </style>
 </head>
 <body class="text-slate-800 font-sans pb-24 antialiased">
 
-  <!-- Üst Başlık -->
   <div class="glass-header text-white p-4 sticky top-0 z-50 shadow-lg">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-extrabold tracking-tight drop-shadow-sm">🏠 EV SEVGİSİ</h1>
-      <select id="userSelect" onchange="changeUser(this.value)" class="bg-white/20 backdrop-blur-md text-white font-semibold text-sm py-1.5 px-3 rounded-xl border border-white/30 focus:outline-none">
-        <option value="Yiğit" class="text-slate-800">Profil: Yiğit</option>
-        <option value="Buse" class="text-slate-800">Profil: Buse</option>
-      </select>
+      
+      <div class="flex bg-white/20 backdrop-blur-md p-1 rounded-xl border border-white/30 items-center">
+        <button id="btn-Yiğit" onclick="changeUser('Yiğit')" class="user-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm">Yiğit</button>
+        <button id="btn-Buse" onclick="changeUser('Buse')" class="user-btn px-4 py-1.5 rounded-lg text-sm font-bold text-white hover:bg-white/10">Buse</button>
+      </div>
+
     </div>
   </div>
 
   <div class="max-w-md mx-auto p-4 mt-2">
 
-    <!-- SEKME 1: ANA SAYFA (Puan, İstekler ve Görevler Bir Arada) -->
+    <!-- SEKME 1: ANA SAYFA -->
     <div id="tab-home" class="space-y-6">
       
-      <!-- PUAN DURUMU -->
       <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-sm font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">🏆 Puan Durumu</h2>
           <button onclick="resetMyPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95" title="Sadece Kendi Puanımı Sıfırla">🔄 Sıfırla</button>
         </div>
         <div class="grid grid-cols-2 gap-4">
-          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner flex flex-col items-center justify-center">
             <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Benim Puanım</span>
             <div id="myPoints" class="text-4xl font-black text-indigo-600 mt-1 drop-shadow-sm">0</div>
+            <span id="myTitle" class="text-xs font-bold text-indigo-400 mt-2 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">🐣 Çaylak</span>
           </div>
-          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+          <div class="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner flex flex-col items-center justify-center">
             <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partner Puanı</span>
             <div id="partnerPoints" class="text-4xl font-black text-pink-500 mt-1 drop-shadow-sm">0</div>
+            <span id="partnerTitle" class="text-xs font-bold text-pink-400 mt-2 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-100">🐣 Çaylak</span>
           </div>
         </div>
       </div>
 
-      <!-- GELEN İSTEKLER (ANA SAYFAYA TAŞINDI) -->
       <div class="bg-white p-5 rounded-2xl card-shadow border border-indigo-100">
         <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">📩 Bekleyen İstekler</h2>
         <div id="requestsList" class="space-y-2">
@@ -69,7 +74,6 @@
         </div>
       </div>
 
-      <!-- İSTEK GÖNDER (ANA SAYFAYA TAŞINDI) -->
       <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100">
         <h2 class="text-sm font-extrabold text-slate-700 mb-3 uppercase tracking-wider">💡 Yeni İstek Gönder</h2>
         <div class="flex gap-2">
@@ -79,7 +83,6 @@
         </div>
       </div>
 
-      <!-- KALICI GÖREVLER -->
       <div class="bg-gradient-to-r from-slate-50 to-indigo-50 p-5 rounded-2xl card-shadow border border-indigo-100">
         <h2 class="text-sm font-extrabold text-indigo-800 mb-3 uppercase tracking-wider">✅ Kalıcı Görevler</h2>
         <div class="flex gap-2 mb-4">
@@ -94,9 +97,8 @@
     </div>
 
 
-    <!-- SEKME 2: MARKET (ÖDÜL VE CEZA) -->
+    <!-- SEKME 2: MARKET -->
     <div id="tab-market" class="space-y-6 tab-hidden">
-      <!-- CEZA SİSTEMİ -->
       <div class="bg-gradient-to-r from-red-50 to-rose-50 p-5 rounded-2xl card-shadow border border-red-100">
         <h2 class="text-sm font-extrabold text-red-800 mb-3 uppercase tracking-wider flex items-center gap-1">🚨 Ceza Kes</h2>
         <div class="flex gap-2 mb-4">
@@ -109,7 +111,6 @@
         </div>
       </div>
 
-      <!-- ÖDÜL MARKETİ -->
       <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-2xl card-shadow border border-yellow-200">
         <h2 class="text-sm font-extrabold text-yellow-800 mb-3 uppercase tracking-wider flex items-center gap-1">🎁 Ödül Marketi</h2>
         <div class="flex gap-2 mb-4">
@@ -136,7 +137,7 @@
 
   </div>
 
-  <!-- ALT MENÜ (SADELEŞTİRİLDİ - 3 BUTON) -->
+  <!-- ALT MENÜ -->
   <div class="fixed bottom-0 left-0 right-0 glass-bottom pb-safe z-50">
     <div class="max-w-md mx-auto flex justify-around items-center py-2">
       
@@ -165,7 +166,6 @@
     
     let currentUser = 'Yiğit';
 
-    // --- SEKME (TAB) DEĞİŞTİRME ---
     function switchTab(tabName, btnElement) {
       document.getElementById('tab-home').classList.add('tab-hidden');
       document.getElementById('tab-market').classList.add('tab-hidden');
@@ -181,8 +181,29 @@
 
     function changeUser(user) {
       currentUser = user;
+      
+      const btnYigit = document.getElementById('btn-Yiğit');
+      const btnBuse = document.getElementById('btn-Buse');
+      
+      if (user === 'Yiğit') {
+        btnYigit.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm";
+        btnBuse.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold text-white hover:bg-white/10";
+      } else {
+        btnBuse.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-indigo-600 shadow-sm";
+        btnYigit.className = "user-btn px-4 py-1.5 rounded-lg text-sm font-bold text-white hover:bg-white/10";
+      }
+
       loadProfiles();
       fetchRequests();
+    }
+
+    function getLevelInfo(points) {
+      if (points < 0) return "🥶 Eksilerde";
+      if (points < 100) return "🐣 Çaylak";
+      if (points < 300) return "🧹 Temizlik Şövalyesi";
+      if (points < 600) return "🦸‍♂️ Evin Kahramanı";
+      if (points < 1000) return "👑 Düzen Ustası";
+      return "🌟 Evin Patronu";
     }
 
     async function loadProfiles() {
@@ -199,6 +220,9 @@
 
         document.getElementById('myPoints').innerText = myPts + myCrown;
         document.getElementById('partnerPoints').innerText = partnerPts + partnerCrown;
+
+        document.getElementById('myTitle').innerText = getLevelInfo(myPts);
+        document.getElementById('partnerTitle').innerText = getLevelInfo(partnerPts);
       }
     }
 
@@ -208,7 +232,6 @@
       loadProfiles();
     }
 
-    // --- CEZA SİSTEMİ ---
     async function loadPenalties() {
       const { data } = await db.from('penalties').select('*').order('points', { ascending: true });
       const container = document.getElementById('penaltiesList');
@@ -255,7 +278,6 @@
       loadProfiles(); loadHistory();
     }
 
-    // --- ÖDÜL SİSTEMİ ---
     async function loadRewards() {
       const { data } = await db.from('rewards').select('*').order('cost', { ascending: true });
       const container = document.getElementById('rewardsList');
@@ -304,7 +326,6 @@
       loadProfiles(); loadHistory();
     }
 
-    // --- GÖREV FONKSİYONLARI ---
     async function addTask() {
       const titleInput = document.getElementById('newTaskTitle');
       const pointsInput = document.getElementById('newTaskPoints');
@@ -353,7 +374,6 @@
       loadProfiles(); loadHistory();
     }
 
-    // --- GEÇMİŞ FONKSİYONLARI ---
     async function deleteHistory(id, points, completedBy) {
       if(!confirm('İşlemi iptal edip puanları geri almak istediğinize emin misiniz?')) return;
       const { data: profile } = await db.from('profiles').select('*').eq('name', completedBy).single();
@@ -398,7 +418,6 @@
       }).join('');
     }
 
-    // --- İSTEK FONKSİYONLARI ---
     async function addRequest() {
       const input = document.getElementById('requestInput');
       const pointsInput = document.getElementById('requestPoints');
@@ -456,8 +475,8 @@
       loadProfiles(); loadHistory(); fetchRequests();
     }
 
-    // Başlat
-    loadProfiles(); loadPenalties(); loadRewards(); fetchRequests(); loadTasks(); loadHistory();
+    changeUser('Yiğit');
+    loadPenalties(); loadRewards(); loadTasks(); loadHistory();
     document.querySelector('.nav-btn').classList.add('active', 'text-indigo-600');
   </script>
 </body>
