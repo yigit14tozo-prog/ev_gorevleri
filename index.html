@@ -22,15 +22,21 @@
 
   <div class="max-w-md mx-auto p-4 space-y-6">
 
-    <!-- Puan Durumu Kartı -->
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Benim Puanım</span>
-        <div id="myPoints" class="text-3xl font-extrabold text-indigo-600 mt-1">0</div>
+    <!-- Puan Durumu Kartı (YENİ RESET BUTONLU) -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wide">🏆 Puan Durumu</h2>
+        <button onclick="resetPoints()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm border border-red-100">🔄 Sıfırla</button>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Partner Puanı</span>
-        <div id="partnerPoints" class="text-3xl font-extrabold text-pink-500 mt-1">0</div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="text-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Benim Puanım</span>
+          <div id="myPoints" class="text-3xl font-extrabold text-indigo-600 mt-1">0</div>
+        </div>
+        <div class="text-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Partner Puanı</span>
+          <div id="partnerPoints" class="text-3xl font-extrabold text-pink-500 mt-1">0</div>
+        </div>
       </div>
     </div>
 
@@ -86,7 +92,6 @@
     
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Varsayılan kullanıcıyı Yiğit yaptık
     let currentUser = 'Yiğit';
 
     function changeUser(user) {
@@ -103,6 +108,16 @@
         if (me) document.getElementById('myPoints').innerText = me.points || 0;
         if (partner) document.getElementById('partnerPoints').innerText = partner.points || 0;
       }
+    }
+
+    // YENİ: Puanları Sıfırlama Fonksiyonu
+    async function resetPoints() {
+      if(!confirm('İkinizin de puanlarını sıfırlamak istediğinize emin misiniz? (Bu işlem geri alınamaz)')) return;
+      
+      await db.from('profiles').update({ points: 0 }).eq('name', 'Yiğit');
+      await db.from('profiles').update({ points: 0 }).eq('name', 'Buse');
+      
+      loadProfiles();
     }
 
     async function addTask() {
